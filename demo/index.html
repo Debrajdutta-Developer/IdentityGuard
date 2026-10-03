@@ -15,6 +15,7 @@
 .main{display:grid;grid-template-columns:1.3fr .7fr;gap:14px}.panel{border:1px solid var(--line);border-radius:18px;background:#0a141b;padding:20px}.panel h2{font-size:16px;margin:0 0 16px}.event{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px 0;border-top:1px solid var(--line)}.event:first-of-type{border-top:0}.event b{font-size:14px}.event small{display:block;color:var(--muted);margin-top:5px}.badge{padding:5px 9px;border-radius:999px;font-size:11px;font-weight:700;align-self:center}.b-red{background:#3a1820;color:#ff8b98}.b-amber{background:#392d15;color:#ffd978}.b-green{background:#143429;color:#72efb2}
 .actions{display:grid;gap:10px}.btn{border:1px solid #2a4a59;background:#10222c;color:var(--text);padding:12px 14px;border-radius:11px;cursor:pointer;text-align:left}.btn:hover{border-color:var(--cyan);transform:translateY(-1px)}.btn strong{display:block}.btn span{color:var(--muted);font-size:12px}
 .flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}.node{border:1px solid #23404d;background:#0d1b23;border-radius:10px;padding:9px 11px;color:#bdd0d8;font-size:12px}.arrow{color:var(--cyan);padding:9px 0}
+.result{margin-top:14px;border:1px solid #244552;border-radius:16px;background:#08131a;padding:16px}.result-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.result-grid div{border:1px solid var(--line);padding:10px;border-radius:10px}.result-grid small,.result-grid b{display:block}.result-grid small{color:var(--muted);font-size:11px;margin-bottom:5px}.reasons{margin-top:14px}.reasons small{color:var(--muted)}.reasons div{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.reasons span{font-size:11px;padding:6px 8px;border-radius:8px;background:#17252d;color:#bcd0d8}.loading{color:var(--cyan)}.error{color:var(--red)}
 .footer{color:#647c87;text-align:center;font-size:12px;margin-top:24px}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.main{grid-template-columns:1fr}.top{align-items:flex-start}.status{font-size:11px}}
 </style>
@@ -49,13 +50,14 @@
 <div class="event"><div><b>Privilege escalation</b><small>admin_021 · user → admin context change</small></div><span class="badge b-red">HIGH · 35</span></div>
 </div>
 </section>
+<div id="result" class="result"><div class="loading">Choose a scenario to run the real backend risk engine.</div></div>
 
 <aside class="panel">
 <h2>Demo controls</h2>
 <div class="actions">
 <button class="btn" onclick="simulate('suspicious')"><strong>Simulate suspicious login</strong><span>New device + repeated failures</span></button>
 <button class="btn" onclick="simulate('normal')"><strong>Simulate normal login</strong><span>Known device + successful authentication</span></button>
-<button class="btn" onclick="checkHealth()"><strong>Check live backend</strong><span>Calls this deployed IdentityGuard API</span></button>
+<button class="btn" onclick="simulate('impossible_travel')"><strong>Test impossible travel</strong><span>Known device + distance/time anomaly</span></button><button class="btn" onclick="simulate('privilege_escalation')"><strong>Test privilege escalation</strong><span>User → admin context change</span></button><button class="btn" onclick="checkHealth()"><strong>Check live backend</strong><span>Calls this deployed IdentityGuard API</span></button>
 </div>
 </aside>
 </div>
@@ -64,25 +66,10 @@
 </div>
 
 <script>
-let count=1284;
-function addEvent(title,detail,level,score){
- const list=document.getElementById('eventsList');
- const el=document.createElement('div');el.className='event';
- const cls=level==='CRITICAL'||level==='HIGH'?'b-red':level==='MEDIUM'?'b-amber':'b-green';
- el.innerHTML='<div><b>'+title+'</b><small>'+detail+'</small></div><span class="badge '+cls+'">'+level+' · '+score+'</span>';
- list.prepend(el);while(list.children.length>5)list.lastElementChild.remove();
- count++;document.getElementById('events').textContent=count.toLocaleString();
- if(level==='HIGH'||level==='CRITICAL')document.getElementById('high').textContent=Number(document.getElementById('high').textContent)+1;
-}
-function simulate(type){
- if(type==='suspicious') addEvent('Suspicious authentication','demo_user · new device · 5 failed attempts','CRITICAL',65);
- else addEvent('Successful authentication','demo_user · known device · normal context','LOW',0);
-}
-async function checkHealth(){
- const el=document.getElementById('backend');const dot=document.getElementById('dot');
- try{const r=await fetch('/health',{cache:'no-store'});const d=await r.json();el.textContent=d.status==='ok'?'Backend online · '+d.service:'Backend response received';dot.style.background='var(--green)';dot.style.boxShadow='0 0 14px #57e3a4'}
- catch(e){el.textContent='Backend unavailable';dot.style.background='var(--red)';dot.style.boxShadow='0 0 14px #ff6b7a'}
-}
+async function checkHealth(){const el=document.getElementById('backend'),dot=document.getElementById('dot');try{const r=await fetch('/health',{cache:'no-store'}),d=await r.json();el.textContent=d.status==='ok'?'Backend online · '+d.service:'Backend response received';dot.style.background='var(--green)';dot.style.boxShadow='0 0 14px #57e3a4'}catch(e){el.textContent='Backend unavailable';dot.style.background='var(--red)';dot.style.boxShadow='0 0 14px #ff6b7a'}}
+function badgeClass(level){return level==='CRITICAL'||level==='HIGH'?'b-red':level==='MEDIUM'?'b-amber':'b-green'}
+function renderResult(data){const a=data.assessment,e=data.event,c=data.context;const list=document.getElementById('eventsList'),el=document.createElement('div');el.className='event';const reasons=(a.reasons||[]).join(' · ')||'No detection triggered';el.innerHTML='<div><b>'+e.user_id+' · '+e.action+' · '+e.outcome+'</b><small>Real engine result · '+reasons+'</small></div><span class="badge '+badgeClass(a.risk_level.toUpperCase())+'">'+a.risk_level.toUpperCase()+' · '+a.risk_score+'</span>';list.prepend(el);while(list.children.length>5)list.lastElementChild.remove();document.getElementById('result').innerHTML='<div class="result-head"><b>Live backend assessment</b><span class="badge '+badgeClass(a.risk_level.toUpperCase())+'">'+a.risk_level.toUpperCase()+' · '+a.risk_score+'/100</span></div><div class="result-grid"><div><small>User</small><b>'+e.user_id+'</b></div><div><small>Device</small><b>'+e.device_id+'</b></div><div><small>Known device</small><b>'+c.known_device+'</b></div><div><small>Privilege</small><b>'+e.privilege+'</b></div></div><div class="reasons"><small>Detection signals</small><div>'+((a.reasons||[]).length?a.reasons.map(x=>'<span>'+x+'</span>').join(''):'<span>none</span>')+'</div></div>'}
+async function simulate(scenario){const result=document.getElementById('result');result.innerHTML='<div class="loading">Sending synthetic event to the live IdentityGuard risk engine…</div>';try{const r=await fetch('/api/v1/demo/evaluate?scenario='+encodeURIComponent(scenario),{method:'POST'}),data=await r.json();if(!r.ok)throw new Error(data.detail||'Request failed');renderResult(data)}catch(e){result.innerHTML='<div class="error">Demo request failed: '+e.message+'</div>'}}
 checkHealth();
 </script>
 </body>
