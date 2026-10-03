@@ -9,6 +9,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.api.audit import router as audit_router
 from app.api.events import router as events_router
 from app.api.identity import router as identity_router
+from app.api.alerts import router as alerts_router
 from app.config import settings
 from app.db import init_db
 from app.models.context import IdentityContext
@@ -37,6 +38,7 @@ app.add_middleware(
 app.include_router(events_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
 app.include_router(identity_router, prefix="/api/v1")
+app.include_router(alerts_router, prefix="/api/v1")
 
 @app.middleware("http")
 async def security_headers(request, call_next):
@@ -70,7 +72,9 @@ def demo_evaluate(scenario: Literal["normal", "suspicious", "impossible_travel",
     event_data = event.model_dump(mode="json")
     assessment = evaluate_event(event, context)
     audit = record_assessment(event_data, assessment)
-    return {"event": event_data, "context": context.model_dump(), "assessment": assessment, "audit": audit, "demo": True}
+    from app.services.alert_service import create_alert
+    alert = create_alert(event_data, assessment, audit)
+    return {"event": event_data, "context": context.model_dump(), "assessment": assessment, "audit": audit, "alert": alert, "demo": True}
 
 @app.get("/health")
 def health() -> dict[str, str]:
