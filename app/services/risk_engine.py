@@ -49,9 +49,12 @@ def evaluate_event(event: AuthEvent, context: IdentityContext | None = None) -> 
     elif score >= 20:
         level = "medium"
 
+    score = min(score, 100)
+    decision = "deny" if level == "critical" else "step_up" if level == "high" else "allow"
     return {
-        "risk_score": min(score, 100),
+        "risk_score": score,
         "risk_level": level,
+        "decision": decision,
         "reasons": reasons,
         "detections": detections,
     }
