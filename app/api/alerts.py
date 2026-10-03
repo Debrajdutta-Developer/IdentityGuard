@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Literal
 
 from app.api.dependencies import require_api_key
-from app.services.alert_service import get_alert, list_alerts, update_alert_status
+from app.services.alert_service import add_alert_evidence, get_alert, get_alert_timeline, list_alerts, update_alert_status
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -47,3 +47,35 @@ def set_alert_status(
     if alert is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"alert": alert, "role": role}
+
+
+class AlertEvidence(BaseModel):
+    evidence_type: str
+    summary: str
+    data: dict = {}
+
+
+@router.get("/{alert_id}/timeline")
+def alert_timeline(
+    alert_id: str,
+    role: str = Depends(require_api_key),
+    x_tenant_id: str | None = Header(default=None),
+) -> dict:
+    tenant_id = x_tenant_id or "default"
+    if get_alert(alert_id, tenant_id) is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"alert_id": alert_id, "timeline": get_alert_timeline(alert_id, tenant_id), "role": role}
+
+
+@router.post("/{alert_id}/evidence")
+def add_evidence(
+    alert_id: str,
+    payload: AlertEvidence,
+    role: str = Depends(require_api_key),
+    x_tenant_id: str | None = Header(default=None),
+) -> dict:
+    tenant_id = x_tenant_id or "default"
+    evidence = add_alert_evidence(alert_id, payload.evidence_type, payload.summary, payload.data, tenant_id)
+    if evidence is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"evidence": evidence, "role": role}
