@@ -1,5 +1,7 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from pydantic import BaseModel, Literal
+from pydantic import BaseModel
 
 from app.api.dependencies import require_api_key
 from app.services.alert_service import add_alert_evidence, get_alert, get_alert_timeline, list_alerts, update_alert_status
