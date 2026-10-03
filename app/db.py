@@ -16,6 +16,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS audit_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_id TEXT NOT NULL UNIQUE,
+                tenant_id TEXT NOT NULL,
                 user_id TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
                 action TEXT NOT NULL,
@@ -27,4 +28,8 @@ def init_db() -> None:
                 created_at TEXT NOT NULL
             )
         """)
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(audit_events)").fetchall()}
+        if "tenant_id" not in columns:
+            connection.execute("ALTER TABLE audit_events ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_audit_tenant_created ON audit_events(tenant_id, id DESC)")
         connection.commit()
