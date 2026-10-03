@@ -1,0 +1,19 @@
+{
+  "event": {
+    "user_id": "user-001",
+    "timestamp": "2026-10-03T10:00:00Z",
+    "ip_address": "192.0.2.10",
+    "device_id": "device-unknown",
+    "action": "login",
+    "outcome": "success",
+    "privilege": "admin",
+    "failed_attempts": 0,
+    "country": "IN"
+  },
+  "context": {
+    "known_device": false,
+    "previous_privilege": "user",
+    "distance_km": 5000,
+    "elapsed_minutes": 60
+  }
+}
