@@ -4,13 +4,14 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.audit import router as audit_router
 from app.api.events import router as events_router
+from app.api.identity import router as identity_router
 from app.config import settings
 from app.db import init_db
 from app.middleware import RateLimitMiddleware
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.3.0",
+    version="0.4.0",
     description="Zero-Trust identity and access monitoring platform.",
 )
 
@@ -32,6 +33,7 @@ app.add_middleware(
 
 app.include_router(events_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
+app.include_router(identity_router, prefix="/api/v1")
 
 
 @app.middleware("http")
