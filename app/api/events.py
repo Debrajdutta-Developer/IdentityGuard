@@ -15,4 +15,4 @@ def evaluate_auth_event(event: AuthEvent, context: IdentityContext | None = None
     assessment = evaluate_event(event, context)
     audit = record_assessment(event_data, assessment)
     decision = "deny" if assessment["risk_level"] == "critical" else "step_up" if assessment["risk_level"] == "high" else "allow"
-    return {"event": event_data, "assessment": assessment, "decision": decision, "audit": audit, "role": role}
+    return {"event": event_data, "assessment": assessment, "decision": assessment["decision"], "audit": audit, "role": role}
