@@ -19,3 +19,16 @@ def test_repeated_failures_raise_high_risk() -> None:
 
     assert result["risk_score"] >= 40
     assert "repeated_failed_authentication" in result["reasons"]
+
+
+def test_policy_decision_is_returned() -> None:
+    event = AuthEvent(
+        user_id="user-002",
+        timestamp=datetime.now(timezone.utc),
+        ip_address="192.0.2.20",
+        device_id="device-002",
+        action="login",
+        outcome="success",
+    )
+    result = evaluate_event(event)
+    assert result["decision"] == "allow"
