@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -38,6 +39,10 @@ async def security_headers(request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store"
     return response
+
+@app.get("/", include_in_schema=False)
+def demo() -> FileResponse:
+    return FileResponse("demo/index.html", media_type="text/html")
 
 @app.get("/health")
 def health() -> dict[str, str]:
