@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
+from app.api.dependencies import require_api_key
 from app.models.context import IdentityContext
 from app.models.events import AuthEvent
 from app.services.audit_ledger import record_assessment
@@ -7,18 +7,9 @@ from app.services.risk_engine import evaluate_event
 
 router = APIRouter(tags=["events"])
 
-
 @router.post("/events/evaluate")
-def evaluate_auth_event(
-    event: AuthEvent,
-    context: IdentityContext | None = None,
-) -> dict:
+def evaluate_auth_event(event: AuthEvent, context: IdentityContext | None = None, role: str = Depends(require_api_key)) -> dict:
     event_data = event.model_dump(mode="json")
     assessment = evaluate_event(event, context)
     audit = record_assessment(event_data, assessment)
-
-    return {
-        "event": event_data,
-        "assessment": assessment,
-        "audit": audit,
-    }
+    return {"event": event_data, "assessment": assessment, "audit": audit, "role": role}
