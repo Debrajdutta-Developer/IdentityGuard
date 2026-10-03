@@ -49,5 +49,18 @@ def init_db() -> None:
             )
         """)
         connection.execute("CREATE INDEX IF NOT EXISTS idx_audit_tenant_created ON audit_events(tenant_id, id DESC)")
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS alert_evidence (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                evidence_id TEXT NOT NULL UNIQUE,
+                tenant_id TEXT NOT NULL,
+                alert_id TEXT NOT NULL,
+                evidence_type TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                data TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
         connection.execute("CREATE INDEX IF NOT EXISTS idx_alert_tenant_status ON security_alerts(tenant_id, status, id DESC)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_evidence_alert ON alert_evidence(tenant_id, alert_id, id ASC)")
         connection.commit()
