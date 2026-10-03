@@ -10,6 +10,7 @@ from app.api.audit import router as audit_router
 from app.api.events import router as events_router
 from app.api.identity import router as identity_router
 from app.api.alerts import router as alerts_router
+from app.api.api_keys import router as api_keys_router
 from app.config import settings
 from app.db import init_db
 from app.models.context import IdentityContext
@@ -31,14 +32,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["X-API-Key", "Content-Type"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["X-API-Key", "X-Tenant-ID", "Content-Type"],
 )
 
 app.include_router(events_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(alerts_router, prefix="/api/v1")
+app.include_router(api_keys_router, prefix="/api/v1")
 
 @app.middleware("http")
 async def security_headers(request, call_next):
