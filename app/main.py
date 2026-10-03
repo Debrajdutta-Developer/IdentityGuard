@@ -81,3 +81,11 @@ def demo_evaluate(scenario: Literal["normal", "suspicious", "impossible_travel",
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": settings.app_name}
+
+@app.get("/ready")
+def readiness() -> dict[str, str]:
+    try:
+        init_db()
+        return {"status": "ready", "service": settings.app_name}
+    except Exception:
+        return {"status": "not_ready", "service": settings.app_name}
