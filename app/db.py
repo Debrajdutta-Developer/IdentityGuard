@@ -62,5 +62,18 @@ def init_db() -> None:
             )
         """)
         connection.execute("CREATE INDEX IF NOT EXISTS idx_alert_tenant_status ON security_alerts(tenant_id, status, id DESC)")
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS api_keys (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key_id TEXT NOT NULL UNIQUE,
+                tenant_id TEXT NOT NULL,
+                key_hash TEXT NOT NULL UNIQUE,
+                role TEXT NOT NULL,
+                expires_at TEXT,
+                revoked_at TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
         connection.execute("CREATE INDEX IF NOT EXISTS idx_evidence_alert ON alert_evidence(tenant_id, alert_id, id ASC)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_tenant ON api_keys(tenant_id, revoked_at, expires_at)")
         connection.commit()
