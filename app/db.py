@@ -25,6 +25,8 @@ def init_db() -> None:
                 risk_score INTEGER NOT NULL,
                 risk_level TEXT NOT NULL,
                 reasons TEXT NOT NULL,
+                previous_hash TEXT NOT NULL DEFAULT "",
+                entry_hash TEXT NOT NULL DEFAULT "",
                 created_at TEXT NOT NULL
             )
         """)
