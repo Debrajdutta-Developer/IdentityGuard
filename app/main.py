@@ -11,18 +11,13 @@ from app.middleware import RateLimitMiddleware
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.4.0",
+    version="0.5.0",
     description="Zero-Trust identity and access monitoring platform.",
 )
 
 init_db()
-
 app.add_middleware(RateLimitMiddleware, limit=60, window_seconds=60)
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["127.0.0.1", "localhost", "*.localhost"],
-)
-
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[],
@@ -35,7 +30,6 @@ app.include_router(events_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
 app.include_router(identity_router, prefix="/api/v1")
 
-
 @app.middleware("http")
 async def security_headers(request, call_next):
     response = await call_next(request)
@@ -44,7 +38,6 @@ async def security_headers(request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store"
     return response
-
 
 @app.get("/health")
 def health() -> dict[str, str]:
