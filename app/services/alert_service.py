@@ -66,3 +66,46 @@ def update_alert_status(alert_id: str, status: str, tenant_id: str = "default") 
         )
         connection.commit()
     return get_alert(alert_id, tenant_id)
+
+
+def get_alert_timeline(alert_id: str, tenant_id: str = "default") -> list[dict]:
+    init_db()
+    with get_connection() as connection:
+        rows = connection.execute(
+            """SELECT evidence_id,evidence_type,summary,data,created_at
+               FROM alert_evidence
+               WHERE alert_id = ? AND tenant_id = ?
+               ORDER BY id ASC""",
+            (alert_id, tenant_id),
+        ).fetchall()
+    return [{**dict(row), "data": json.loads(row["data"])} for row in rows]
+
+
+def add_alert_evidence(
+    alert_id: str,
+    evidence_type: str,
+    summary: str,
+    data: dict,
+    tenant_id: str = "default",
+) -> dict | None:
+    alert = get_alert(alert_id, tenant_id)
+    if alert is None:
+        return None
+    now = datetime.now(timezone.utc).isoformat()
+    evidence_id = str(uuid4())
+    with get_connection() as connection:
+        connection.execute(
+            """INSERT INTO alert_evidence
+            (evidence_id,tenant_id,alert_id,evidence_type,summary,data,created_at)
+            VALUES (?,?,?,?,?,?,?)""",
+            (evidence_id, tenant_id, alert_id, evidence_type, summary, json.dumps(data), now),
+        )
+        connection.commit()
+    return {
+        "evidence_id": evidence_id,
+        "alert_id": alert_id,
+        "evidence_type": evidence_type,
+        "summary": summary,
+        "data": data,
+        "created_at": now,
+    }
