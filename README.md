@@ -1,8 +1,8 @@
 # IdentityGuard
 
-**Zero-Trust Identity & Access Monitoring Platform**
+**Enterprise Identity Threat Detection & Response Platform**
 
-IdentityGuard is a defensive security monitoring platform for analyzing authentication and session telemetry, assigning risk, and recording security assessments in an auditable ledger.
+IdentityGuard is a defensive identity-security platform for ingesting authentication telemetry, correlating identity context, detecting risky access patterns, making policy decisions, and preserving tenant-scoped audit evidence.
 
 ## Architecture
 
@@ -10,18 +10,21 @@ IdentityGuard is a defensive security monitoring platform for analyzing authenti
 Authentication Event
         |
         v
-Identity / Device Context
+Tenant + Identity Context
         |
         v
-Detection Rules
+Detection Engine
         |
         v
 Risk Engine
         |
-        +----> Security Assessment
+        v
+Policy Decision (allow / step-up / deny)
+        |
+        +----> Security Alert
         |
         v
-Audit Ledger (SQLite)
+Tenant-scoped Audit Ledger
 
 Workload Identity:
 SPIRE Agent -> Workload API -> X.509-SVID -> SPIFFE ID -> mTLS boundary
@@ -38,6 +41,8 @@ SPIRE Agent -> Workload API -> X.509-SVID -> SPIFFE ID -> mTLS boundary
 ## Security controls
 
 - API-key authentication with viewer/admin roles
+- Tenant-scoped event and audit boundaries
+- Explicit access decision output (allow / step-up / deny)
 - Persistent audit ledger
 - Request rate limiting
 - Trusted-host validation
@@ -53,11 +58,11 @@ SPIRE Agent -> Workload API -> X.509-SVID -> SPIFFE ID -> mTLS boundary
 | Endpoint | Purpose |
 |---|---|
 | `GET /health` | Service health |
-| `POST /api/v1/events/evaluate` | Evaluate an authentication event |
+| `POST /api/v1/events/evaluate` | Evaluate an event and return a policy decision |
 | `GET /api/v1/audit/events` | Read the audit ledger |
 | `GET /api/v1/identity/workload` | Report workload identity status |
 
-Protected endpoints require the `X-API-Key` header.
+Protected endpoints require the `X-API-Key` header. Enterprise integrations can send `X-Tenant-ID` to isolate customer/organization telemetry.
 
 ## Quick start
 
@@ -94,9 +99,9 @@ See:
 
 IdentityGuard is intended for **authorized defensive security monitoring and research**. It does not provide unauthorized access or exploitation functionality.
 
-## Status
+## Product direction
 
-**MVP / research-ready architecture**
+IdentityGuard is being developed toward a B2B deployment model: tenant isolation, policy decisions, identity/workload context, auditable security evidence, and integration-ready APIs. The current repository remains an MVP foundation; production deployments should use managed infrastructure for the database, secrets, distributed rate limiting, observability, and high availability.
 
 The project is designed so production deployments can later replace the local SQLite ledger, process-local rate limiter, and development credentials with managed infrastructure.
 
