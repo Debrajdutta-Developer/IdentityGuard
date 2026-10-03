@@ -30,6 +30,6 @@ def list_audit_events(limit: int = 50, tenant_id: str = "default") -> list[dict]
         rows = connection.execute(
             """SELECT event_id,tenant_id,user_id,timestamp,action,outcome,privilege,
                       risk_score,risk_level,reasons,created_at
-               FROM audit_events ORDER BY id DESC LIMIT ?""", (limit,)
+               FROM audit_events WHERE tenant_id = ? ORDER BY id DESC LIMIT ?""", (limit,)
         ).fetchall()
     return [{**dict(row), "reasons": json.loads(row["reasons"])} for row in rows]
