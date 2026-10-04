@@ -4,31 +4,31 @@
 
 IdentityGuard is a defensive identity-security platform for ingesting authentication telemetry, correlating identity context, detecting risky access patterns, making policy decisions, and preserving tenant-scoped audit evidence.
 
-## Architecture
+## Production architecture
 
-```
+```text
 Authentication Event
         |
         v
 Tenant + Identity Context
         |
         v
-Detection Engine
+Detection + Risk Engine
         |
         v
-Risk Engine
-        |
-        v
-Policy Decision (allow / step-up / deny)
+Policy Decision: allow / step-up / deny
         |
         +----> Security Alert
         |
         v
 Tenant-scoped Audit Ledger
 
-Workload Identity:
-SPIRE Agent -> Workload API -> X.509-SVID -> SPIFFE ID -> mTLS boundary
-```
+Production infrastructure:
+PostgreSQL -> durable application data
+Redis      -> distributed rate limiting
+FastAPI    -> API + policy boundary
+SPIRE      -> workload identity / X.509-SVID
+``` 
 
 ## Detection capabilities
 
@@ -40,29 +40,46 @@ SPIRE Agent -> Workload API -> X.509-SVID -> SPIFFE ID -> mTLS boundary
 
 ## Security controls
 
-- API-key authentication with viewer/admin roles
-- Tenant-scoped event and audit boundaries
-- Explicit access decision output (allow / step-up / deny)
+- API-key authentication with role-based authorization
+- Tenant-scoped event, alert, and audit boundaries
+- Explicit access decision output: allow / step-up / deny
 - Persistent audit ledger
-- Request rate limiting
+- Redis-backed distributed rate limiting with safe local fallback
+- PostgreSQL production backend support
 - Trusted-host validation
+- Environment-aware production configuration validation
 - Restricted CORS
-- Security response headers
+- Security response headers and HSTS in production
 - Optional SPIFFE/SPIRE workload identity
 - X.509 certificate parsing
 - TLS 1.3 mTLS verification boundary
-- Automated CI testing
+- Automated CI security and integration testing
 
 ## API
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /health` | Service health |
+| `GET /health` | Liveness check |
+| `GET /ready` | Application readiness check |
 | `POST /api/v1/events/evaluate` | Evaluate an event and return a policy decision |
 | `GET /api/v1/audit/events` | Read the audit ledger |
 | `GET /api/v1/identity/workload` | Report workload identity status |
 
 Protected endpoints require the `X-API-Key` header. Enterprise integrations can send `X-Tenant-ID` to isolate customer/organization telemetry.
+
+## Production configuration
+
+Set these environment variables in the deployment platform:
+
+```text
+ENVIRONMENT=production
+ALLOWED_HOSTS=<your-production-hosts>
+CORS_ORIGINS=<your-approved-origins>
+DATABASE_URL=<managed-postgresql-url>
+REDIS_URL=<managed-redis-url>
+```
+
+Do not commit credentials, API keys, database URLs, or Redis URLs to the repository.
 
 ## Quick start
 
@@ -101,9 +118,7 @@ IdentityGuard is intended for **authorized defensive security monitoring and res
 
 ## Product direction
 
-IdentityGuard is being developed toward a B2B deployment model: tenant isolation, policy decisions, identity/workload context, auditable security evidence, and integration-ready APIs. The current repository remains an MVP foundation; production deployments should use managed infrastructure for the database, secrets, distributed rate limiting, observability, and high availability.
-
-The project is designed so production deployments can later replace the local SQLite ledger, process-local rate limiter, and development credentials with managed infrastructure.
+IdentityGuard is being developed toward a B2B deployment model: tenant isolation, policy decisions, identity/workload context, auditable security evidence, and integration-ready APIs. Production deployments should use managed infrastructure for the database, secrets, distributed rate limiting, observability, and high availability.
 
 ## Author
 
