@@ -1,21 +1,49 @@
+import os
 import sqlite3
 from pathlib import Path
+from typing import Any
 
-from app.db_backend import backend_name
+from app.db_backend import is_postgres
 
 DB_PATH = Path("identityguard.db")
 
 
-def get_connection() -> sqlite3.Connection:
-    # PostgreSQL is exposed as the production backend configuration boundary.
-    # The current repository keeps SQLite as the operational implementation
-    # until the schema/driver migration is completed and tested.
+class _PostgresConnection:
+    def __init__(self, connection: Any):
+        self._connection = connection
+
+    def __enter__(self):
+        self._connection.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return self._connection.__exit__(exc_type, exc, tb)
+
+    def execute(self, query: str, params=()):
+        # Keep the existing service SQL portable while PostgreSQL uses psycopg's
+        # parameter syntax internally.
+        return self._connection.execute(query.replace("?", "%s"), params)
+
+    def __getattr__(self, name: str):
+        return getattr(self._connection, name)
+
+
+def get_connection():
+    if is_postgres():
+        from app.postgres import connect
+        return _PostgresConnection(connect())
+
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     return connection
 
 
 def init_db() -> None:
+    if is_postgres():
+        from app.postgres import init_postgres
+        init_postgres()
+        return
+
     with get_connection() as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS audit_events (
