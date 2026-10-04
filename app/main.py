@@ -19,6 +19,8 @@ from app.services.audit_ledger import record_assessment
 from app.services.risk_engine import evaluate_event
 from app.middleware import RateLimitMiddleware
 
+settings.validate()
+
 app = FastAPI(
     title=settings.app_name,
     version="0.5.0",
@@ -30,7 +32,7 @@ app.add_middleware(RateLimitMiddleware, limit=60, window_seconds=60)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[],
+    allow_origins=settings.cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["X-API-Key", "X-Tenant-ID", "Content-Type"],
@@ -49,6 +51,8 @@ async def security_headers(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store"
+    if settings.environment == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 @app.get("/", include_in_schema=False)
