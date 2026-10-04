@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException
 
 from app.security import authenticate
 
@@ -15,10 +15,10 @@ def require_api_key(
     return role
 
 
-def require_roles(*allowed_roles: str) -> Callable[[str], str]:
+def require_roles(*allowed_roles: str) -> Callable:
     allowed = set(allowed_roles)
 
-    def checker(role: str) -> str:
+    def checker(role: str = Depends(require_api_key)) -> str:
         if role not in allowed:
             raise HTTPException(status_code=403, detail="Insufficient role")
         return role
@@ -26,7 +26,7 @@ def require_roles(*allowed_roles: str) -> Callable[[str], str]:
     return checker
 
 
-def require_admin(role: str) -> str:
+def require_admin(role: str = Depends(require_api_key)) -> str:
     if role != "admin":
         raise HTTPException(status_code=403, detail="Admin role required")
     return role
