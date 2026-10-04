@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from app.db import get_connection, init_db
+from app.db import DB_PATH, get_connection, init_db
 from app.main import app
 from app.security import authenticate, create_api_key, revoke_api_key
 
