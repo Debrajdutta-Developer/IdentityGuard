@@ -23,8 +23,8 @@ settings.validate()
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.5.0",
-    description="Zero-Trust identity and access monitoring platform.",
+    version="1.0.0",
+    description="Enterprise zero-trust identity threat detection and response platform.",
 )
 
 init_db()
@@ -84,12 +84,12 @@ def demo_evaluate(scenario: Literal["normal", "suspicious", "impossible_travel",
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": settings.app_name}
+    return {"status": "ok", "service": settings.app_name, "version": "1.0.0"}
 
 @app.get("/ready")
 def readiness() -> dict[str, str]:
     try:
         init_db()
-        return {"status": "ready", "service": settings.app_name}
+        return {"status": "ready", "service": settings.app_name, "version": "1.0.0"}
     except Exception:
-        return {"status": "not_ready", "service": settings.app_name}
+        return {"status": "not_ready", "service": settings.app_name, "version": "1.0.0"}
