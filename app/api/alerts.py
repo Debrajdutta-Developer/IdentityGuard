@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 
-from app.api.dependencies import require_api_key
+from app.api.dependencies import require_api_key, require_roles
 from app.services.alert_service import add_alert_evidence, get_alert, get_alert_timeline, list_alerts, update_alert_status
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -41,7 +41,7 @@ def get_single_alert(
 def set_alert_status(
     alert_id: str,
     payload: AlertStatusUpdate,
-    role: str = Depends(require_api_key),
+    role: str = Depends(require_roles("admin", "analyst")),
     x_tenant_id: str | None = Header(default=None),
 ) -> dict:
     tenant_id = x_tenant_id or "default"
@@ -73,7 +73,7 @@ def alert_timeline(
 def add_evidence(
     alert_id: str,
     payload: AlertEvidence,
-    role: str = Depends(require_api_key),
+    role: str = Depends(require_roles("admin", "analyst")),
     x_tenant_id: str | None = Header(default=None),
 ) -> dict:
     tenant_id = x_tenant_id or "default"
