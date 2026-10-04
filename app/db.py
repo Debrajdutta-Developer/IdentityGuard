@@ -1,10 +1,15 @@
 import sqlite3
 from pathlib import Path
 
+from app.db_backend import backend_name
+
 DB_PATH = Path("identityguard.db")
 
 
 def get_connection() -> sqlite3.Connection:
+    # PostgreSQL is exposed as the production backend configuration boundary.
+    # The current repository keeps SQLite as the operational implementation
+    # until the schema/driver migration is completed and tested.
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     return connection
