@@ -1,4 +1,4 @@
-import pytest
+import asyncio
 
 from app import middleware
 
@@ -16,9 +16,6 @@ class FakeRedis:
         self.expirations[key] = seconds
         return True
 
-    async def ping(self):
-        return True
-
 
 class FakeClient:
     host = "10.0.0.10"
@@ -30,19 +27,21 @@ class FakeRequest:
         self.client = FakeClient()
 
 
-@pytest.mark.asyncio
-async def test_redis_rate_limiter_returns_429_after_limit(monkeypatch):
+async def _resolved(value):
+    return value
+
+
+async def _response_handler(request):
+    from starlette.responses import Response
+    return Response(status_code=200)
+
+
+def test_redis_rate_limiter_returns_429_after_limit(monkeypatch):
     redis = FakeRedis()
     monkeypatch.setattr(middleware, "_redis_client", lambda: _resolved(redis))
     limiter = middleware.RateLimitMiddleware(lambda request: None, limit=2, window_seconds=60)
 
-    async def next_handler(request):
-        from starlette.responses import Response
-        return Response(status_code=200)
-
-    first = await limiter.dispatch(FakeRequest(), next_handler)
-    second = await limiter.dispatch(FakeRequest(), next_handler)
-    third = await limiter.dispatch(FakeRequest(), next_handler)
+    first, second, third = asyncio.run(_run_three(limiter))
 
     assert first.status_code == 200
     assert second.status_code == 200
@@ -50,12 +49,16 @@ async def test_redis_rate_limiter_returns_429_after_limit(monkeypatch):
     assert redis.expirations
 
 
-async def _resolved(value):
-    return value
+async def _run_three(limiter):
+    request = FakeRequest()
+    return (
+        await limiter.dispatch(request, _response_handler),
+        await limiter.dispatch(request, _response_handler),
+        await limiter.dispatch(request, _response_handler),
+    )
 
 
-@pytest.mark.asyncio
-async def test_redis_failure_falls_back_to_local_limiter(monkeypatch):
+def test_redis_failure_falls_back_to_local_limiter(monkeypatch):
     class BrokenRedis:
         async def incr(self, key):
             raise RuntimeError("redis unavailable")
@@ -64,12 +67,13 @@ async def test_redis_failure_falls_back_to_local_limiter(monkeypatch):
     middleware._REQUESTS.clear()
     limiter = middleware.RateLimitMiddleware(lambda request: None, limit=1, window_seconds=60)
 
-    async def next_handler(request):
-        from starlette.responses import Response
-        return Response(status_code=200)
+    async def run():
+        request = FakeRequest("/api/v1/a")
+        return (
+            await limiter.dispatch(request, _response_handler),
+            await limiter.dispatch(request, _response_handler),
+        )
 
-    first = await limiter.dispatch(FakeRequest("/api/v1/a"), next_handler)
-    second = await limiter.dispatch(FakeRequest("/api/v1/a"), next_handler)
-
+    first, second = asyncio.run(run())
     assert first.status_code == 200
     assert second.status_code == 429
