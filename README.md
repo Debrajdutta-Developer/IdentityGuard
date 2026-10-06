@@ -120,6 +120,18 @@ IdentityGuard is intended for **authorized defensive security monitoring and res
 
 IdentityGuard is being developed toward a B2B deployment model: tenant isolation, policy decisions, identity/workload context, auditable security evidence, and integration-ready APIs. Production deployments should use managed infrastructure for the database, secrets, distributed rate limiting, observability, and high availability.
 
+
+## Demo & presentation
+
+### 🎥 Demo website video
+
+[Watch the IdentityGuard demo video on Google Drive](https://drive.google.com/file/d/1l2BZVf-hckZ-asqZmkSYa4SMfrEkUpFi/view?usp=drivesdk)
+
+### 📊 Project presentation
+
+[View the IdentityGuard project PPT on Google Drive](https://drive.google.com/file/d/1hivxB-hCFPiW3rz5w0FaCG0hMrn_BmHD/view?usp=drivesdk)
+
+
 ## Author
 
 **Debraj Dutta — The Ghost**
